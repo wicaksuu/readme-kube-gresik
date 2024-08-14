@@ -56,6 +56,95 @@ sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 ```
 
+#### container runtime yang tidak berjalan atau tidak dikonfigurasi dengan benar
+Kubernetes memerlukan container runtime seperti Docker atau containerd untuk mengelola container. Dalam kasus ini, error menunjukkan bahwa containerd tidak dapat berkomunikasi dengan kubeadm karena ada masalah dengan layanan runtime.
+
+Berikut adalah langkah-langkah untuk memperbaiki masalah ini:
+
+### 1. Pastikan Container Runtime Berjalan
+
+Karena Anda menggunakan containerd, pertama-tama pastikan bahwa layanan containerd berjalan dengan baik:
+
+```bash
+sudo systemctl status containerd
+```
+
+Jika layanan tidak berjalan, coba untuk memulainya:
+
+```bash
+sudo systemctl start containerd
+```
+
+Dan pastikan layanan tersebut berjalan saat booting:
+
+```bash
+sudo systemctl enable containerd
+```
+
+### 2. Konfigurasi CRI (Container Runtime Interface)
+
+Jika containerd sudah berjalan, tetapi Anda masih mengalami masalah, Anda mungkin perlu memastikan bahwa containerd dikonfigurasi dengan benar untuk Kubernetes. Untuk itu, Anda bisa membuat atau memeriksa konfigurasi berikut:
+
+#### 2.1. Buat atau Edit File Konfigurasi containerd
+
+Buat atau edit file konfigurasi `/etc/containerd/config.toml`:
+
+```bash
+sudo mkdir -p /etc/containerd
+sudo containerd config default | sudo tee /etc/containerd/config.toml
+```
+
+Pastikan bahwa bagian `plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options` di file konfigurasi ini memiliki konfigurasi yang benar, khususnya baris berikut:
+
+```toml
+    SystemdCgroup = true
+```
+
+Setelah mengedit file, restart layanan containerd:
+
+```bash
+sudo systemctl restart containerd
+```
+
+### 3. Coba Inisialisasi Kembali Kubeadm
+
+Setelah memastikan containerd berjalan dan dikonfigurasi dengan benar, coba jalankan kembali perintah `kubeadm init`:
+
+```bash
+sudo kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=103.132.230.116
+```
+
+### 4. Debugging Lebih Lanjut
+
+Jika masalah masih berlanjut, jalankan perintah `kubeadm init` dengan level log yang lebih tinggi untuk mendapatkan informasi lebih rinci:
+
+```bash
+sudo kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=103.132.230.116 --v=5
+```
+
+Ini akan memberikan lebih banyak detail tentang di mana kesalahan mungkin terjadi.
+
+### 5. Menggunakan Docker sebagai Container Runtime (Opsional)
+
+Jika Anda masih mengalami kesulitan dengan containerd, Anda bisa beralih ke Docker sebagai container runtime, yang lebih umum digunakan dalam banyak setup Kubernetes:
+
+1. Instal Docker (jika belum terinstal):
+
+   ```bash
+   sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+   ```
+
+2. Konfigurasi kubeadm untuk menggunakan Docker dengan cara menghapus konfigurasi containerd dan mencoba inisialisasi kembali:
+
+   ```bash
+   sudo kubeadm reset
+   sudo kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=103.132.230.116
+   ```
+
+Dengan mengikuti langkah-langkah di atas, Anda seharusnya dapat mengatasi masalah yang dihadapi dan melanjutkan dengan instalasi Kubernetes.
+
+---
+
 #### 2.2. Inisialisasi Master Node
 
 Pada master node, jalankan perintah berikut untuk menginisialisasi cluster Kubernetes:
