@@ -33,10 +33,8 @@ sudo sed -i '/ swap / s/^/#/' /etc/fstab
 Instal Docker sebagai container runtime di semua node:
 
 ```bash
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+sudo apt install docker.io -y
 sudo systemctl enable docker
 sudo systemctl start docker
 ```
@@ -49,9 +47,9 @@ Instal kubeadm, kubelet, dan kubectl di semua node:
 
 ```bash
 sudo apt-get update && sudo apt-get install -y apt-transport-https
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 sudo bash -c 'cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-deb https://apt.kubernetes.io/ kubernetes-xenial main
+deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /
 EOF'
 sudo apt-get update
 sudo apt-get install -y kubelet kubeadm kubectl
